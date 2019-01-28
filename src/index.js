@@ -16,21 +16,21 @@ import { AbstractHistory } from './history/abstract'
 import type { Matcher } from './create-matcher'
 
 export default class VueRouter {
-  static install: () => void;
-  static version: string;
+  static install: () => void
+  static version: string
 
-  app: any;
-  apps: Array<any>;
-  ready: boolean;
-  readyCbs: Array<Function>;
-  options: RouterOptions;
-  mode: string;
-  history: HashHistory | HTML5History | AbstractHistory;
-  matcher: Matcher;
-  fallback: boolean;
-  beforeHooks: Array<?NavigationGuard>;
-  resolveHooks: Array<?NavigationGuard>;
-  afterHooks: Array<?AfterNavigationHook>;
+  app: any
+  apps: Array<any>
+  ready: boolean
+  readyCbs: Array<Function>
+  options: RouterOptions
+  mode: string
+  history: HashHistory | HTML5History | AbstractHistory
+  matcher: Matcher
+  fallback: boolean
+  beforeHooks: Array<?NavigationGuard>
+  resolveHooks: Array<?NavigationGuard>
+  afterHooks: Array<?AfterNavigationHook>
 
   constructor (options: RouterOptions = {}) {
     this.app = null

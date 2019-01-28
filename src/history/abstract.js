@@ -4,8 +4,8 @@ import type Router from '../index'
 import { History } from './base'
 
 export class AbstractHistory extends History {
-  index: number;
-  stack: Array<Route>;
+  index: number
+  stack: Array<Route>
 
   constructor (router: Router, base: ?string) {
     super(router, base)
