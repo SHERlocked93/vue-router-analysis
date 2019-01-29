@@ -13,40 +13,49 @@ import {
 } from '../util/resolve-components'
 
 export class History {
-  router: Router;
-  base: string;
-  current: Route;
-  pending: ?Route;
-  cb: (r: Route) => void;
-  ready: boolean;
-  readyCbs: Array<Function>;
-  readyErrorCbs: Array<Function>;
+  router: Router                     // VueRouter 实例
+  base: string                       // base路径
+  current: Route
+  pending: ?Route
+  cb: (r: Route) => void
+  ready: boolean
+  readyCbs: Array<Function>
+  readyErrorCbs: Array<Function>
   errorCbs: Array<Function>;
-
+  
   // implemented by sub-classes
   +go: (n: number) => void;
   +push: (loc: RawLocation) => void;
   +replace: (loc: RawLocation) => void;
   +ensureURL: (push?: boolean) => void;
-  +getCurrentLocation: () => string;
-
-  constructor (router: Router, base: ?string) {
+  +getCurrentLocation: () => string
+  
+  constructor(router: Router, base: ?string) {
     this.router = router
     this.base = normalizeBase(base)
     // start with a route object that stands for "nowhere"
-    this.current = START
+    this.current = START          // 根路由 '/' 路由 url.parse 对象（根据 util/route.js 文件的 createRoute 方法创建）
     this.pending = null
     this.ready = false
     this.readyCbs = []
     this.readyErrorCbs = []
     this.errorCbs = []
   }
-
-  listen (cb: Function) {
+  
+  /**
+   * 监听函数
+   * @param cb
+   */
+  listen(cb: Function) {
     this.cb = cb
   }
-
-  onReady (cb: Function, errorCb: ?Function) {
+  
+  /**
+   * onReady 事件this.ready状态为true，执行cb回调，否则 cb 暂时存储，不执行
+   * @param cb
+   * @param errorCb
+   */
+  onReady(cb: Function, errorCb: ?Function) {
     if (this.ready) {
       cb()
     } else {
@@ -56,18 +65,30 @@ export class History {
       }
     }
   }
-
-  onError (errorCb: Function) {
+  
+  /**
+   * onError 事件
+   * @param errorCb
+   */
+  onError(errorCb: Function) {
     this.errorCbs.push(errorCb)
   }
-
-  transitionTo (location: RawLocation, onComplete?: Function, onAbort?: Function) {
+  
+  /**
+   * 路由跳转的封装
+   * @param location HTML5History: 获取浏览器地址，除去base的pathname
+   * @param location HashHistory: 获取浏览器hash
+   * @param location AbstractHistory: 获取 stack 数组最后一项的 fullPath
+   * @param onComplete 成功回调
+   * @param onAbort 失败回调
+   */
+  transitionTo(location: RawLocation, onComplete?: Function, onAbort?: Function) {
     const route = this.router.match(location, this.current)
     this.confirmTransition(route, () => {
       this.updateRoute(route)
       onComplete && onComplete(route)
       this.ensureURL()
-
+      
       // fire ready cbs once
       if (!this.ready) {
         this.ready = true
@@ -83,8 +104,8 @@ export class History {
       }
     })
   }
-
-  confirmTransition (route: Route, onComplete: Function, onAbort?: Function) {
+  
+  confirmTransition(route: Route, onComplete: Function, onAbort?: Function) {
     const current = this.current
     const abort = err => {
       if (isError(err)) {
@@ -105,13 +126,13 @@ export class History {
       this.ensureURL()
       return abort()
     }
-
+    
     const {
       updated,
       deactivated,
       activated
     } = resolveQueue(this.current.matched, route.matched)
-
+    
     const queue: Array<?NavigationGuard> = [].concat(
       // in-component leave guards
       extractLeaveGuards(deactivated),
@@ -124,7 +145,7 @@ export class History {
       // async components
       resolveAsyncComponents(activated)
     )
-
+    
     this.pending = route
     const iterator = (hook: NavigationGuard, next) => {
       if (this.pending !== route) {
@@ -159,7 +180,7 @@ export class History {
         abort(e)
       }
     }
-
+    
     runQueue(queue, iterator, () => {
       const postEnterCbs = []
       const isValid = () => this.current === route
@@ -181,8 +202,8 @@ export class History {
       })
     })
   }
-
-  updateRoute (route: Route) {
+  
+  updateRoute(route: Route) {
     const prev = this.current
     this.current = route
     this.cb && this.cb(route)
@@ -192,7 +213,12 @@ export class History {
   }
 }
 
-function normalizeBase (base: ?string): string {
+/**
+ * 规范化 base 路径，空的话赋 /
+ * @param base
+ * @returns {string}
+ */
+function normalizeBase(base: ?string): string {
   if (!base) {
     if (inBrowser) {
       // respect <base> tag
@@ -212,7 +238,7 @@ function normalizeBase (base: ?string): string {
   return base.replace(/\/$/, '')
 }
 
-function resolveQueue (
+function resolveQueue(
   current: Array<RouteRecord>,
   next: Array<RouteRecord>
 ): {
@@ -234,7 +260,7 @@ function resolveQueue (
   }
 }
 
-function extractGuards (
+function extractGuards(
   records: Array<RouteRecord>,
   name: string,
   bind: Function,
@@ -251,7 +277,7 @@ function extractGuards (
   return flatten(reverse ? guards.reverse() : guards)
 }
 
-function extractGuard (
+function extractGuard(
   def: Object | Function,
   key: string
 ): NavigationGuard | Array<NavigationGuard> {
@@ -262,23 +288,23 @@ function extractGuard (
   return def.options[key]
 }
 
-function extractLeaveGuards (deactivated: Array<RouteRecord>): Array<?Function> {
+function extractLeaveGuards(deactivated: Array<RouteRecord>): Array<?Function> {
   return extractGuards(deactivated, 'beforeRouteLeave', bindGuard, true)
 }
 
-function extractUpdateHooks (updated: Array<RouteRecord>): Array<?Function> {
+function extractUpdateHooks(updated: Array<RouteRecord>): Array<?Function> {
   return extractGuards(updated, 'beforeRouteUpdate', bindGuard)
 }
 
-function bindGuard (guard: NavigationGuard, instance: ?_Vue): ?NavigationGuard {
+function bindGuard(guard: NavigationGuard, instance: ?_Vue): ?NavigationGuard {
   if (instance) {
-    return function boundRouteGuard () {
+    return function boundRouteGuard() {
       return guard.apply(instance, arguments)
     }
   }
 }
 
-function extractEnterGuards (
+function extractEnterGuards(
   activated: Array<RouteRecord>,
   cbs: Array<Function>,
   isValid: () => boolean
@@ -288,14 +314,14 @@ function extractEnterGuards (
   })
 }
 
-function bindEnterGuard (
+function bindEnterGuard(
   guard: NavigationGuard,
   match: RouteRecord,
   key: string,
   cbs: Array<Function>,
   isValid: () => boolean
 ): NavigationGuard {
-  return function routeEnterGuard (to, from, next) {
+  return function routeEnterGuard(to, from, next) {
     return guard(to, from, cb => {
       next(cb)
       if (typeof cb === 'function') {
@@ -312,7 +338,7 @@ function bindEnterGuard (
   }
 }
 
-function poll (
+function poll(
   cb: any, // somehow flow cannot infer this is a function
   instances: Object,
   key: string,

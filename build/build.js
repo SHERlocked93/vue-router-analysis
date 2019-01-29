@@ -11,7 +11,7 @@ if (!fs.existsSync('dist')) {
 
 build(configs)
 
-function build (builds) {
+function build(builds) {
   let built = 0
   const total = builds.length
   const next = () => {
@@ -22,11 +22,11 @@ function build (builds) {
       }
     }).catch(logError)
   }
-
+  
   next()
 }
 
-function buildEntry ({ input, output }) {
+function buildEntry({ input, output }) {
   const isProd = /min\.js$/.test(output.file)
   return rollup.rollup(input)
     .then(bundle => bundle.generate(output))
@@ -47,13 +47,13 @@ function buildEntry ({ input, output }) {
     })
 }
 
-function write (dest, code, zip) {
+function write(dest, code, zip) {
   return new Promise((resolve, reject) => {
-    function report (extra) {
+    function report(extra) {
       console.log(blue(path.relative(process.cwd(), dest)) + ' ' + getSize(code) + (extra || ''))
       resolve()
     }
-
+    
     fs.writeFile(dest, code, err => {
       if (err) return reject(err)
       if (zip) {
@@ -68,14 +68,14 @@ function write (dest, code, zip) {
   })
 }
 
-function getSize (code) {
+function getSize(code) {
   return (code.length / 1024).toFixed(2) + 'kb'
 }
 
-function logError (e) {
+function logError(e) {
   console.log(e)
 }
 
-function blue (str) {
+function blue(str) {
   return '\x1b[1m\x1b[34m' + str + '\x1b[39m\x1b[22m'
 }

@@ -98,8 +98,7 @@ function ensureSlash (): boolean {
 }
 
 export function getHash (): string {
-  // We can't use window.location.hash here because it's not
-  // consistent across browsers - Firefox will pre-decode it!
+  // 不用 window.location.hash 的原因是兼容性 - Firefox will pre-decode it!
   const href = window.location.href
   const index = href.indexOf('#')
   return index === -1 ? '' : decodeURI(href.slice(index + 1))

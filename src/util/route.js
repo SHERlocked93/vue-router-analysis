@@ -5,6 +5,17 @@ import { stringifyQuery } from './query'
 
 const trailingSlashRE = /\/?$/
 
+/**
+ * 创建路由 url.parse 对象：
+ * 一、location 地址的 query 参数的克隆
+ * 二、配置 route 对象：根据参数组装成 url.parse 对象
+ * 三、存在 redirectedFrom 参数：添加至 route 对象
+ * @param record
+ * @param location
+ * @param redirectedFrom 从哪里跳转过来的，参数值与 location 类似
+ * @param router VueRouter 实例 this
+ * @returns {Route}
+ */
 export function createRoute (
   record: ?RouteRecord,
   location: Location,
