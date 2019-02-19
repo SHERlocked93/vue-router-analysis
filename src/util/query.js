@@ -62,6 +62,14 @@ function parseQuery (query: string): Dictionary<string> {
   return res
 }
 
+/**
+ * query 参数的 stringifyQuery：
+ * 例：query = { foo: [1, 2], bar: { a: 1, b: 2 }, test: 2 };
+ * stringifyQuery(query);
+ * 最终返回："?foo=1&foo=2&bar=%5Bobject%20Object%5D&test=2"
+ * @param obj
+ * @returns {string}
+ */
 export function stringifyQuery (obj: Dictionary<string>): string {
   const res = obj ? Object.keys(obj).map(key => {
     const val = obj[key]

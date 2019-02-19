@@ -11,9 +11,10 @@ vue-router源码注释：[vue\-router\-analysis](https://github.com/SHERlocked93
 
 ## 0. 前备知识
 
-- [Flow](https://flow.org/)
-- [ES6语法](http://es6.ruanyifeng.com/)
-- [HTML5 History Api](https://developer.mozilla.org/zh-CN/docs/Mozilla/Add-ons/WebExtensions/API/history)
+- Flow
+- ES6语法
+- 设计模式 - 外观模式
+- HTML5 History Api
 
 如果你还没有了解的话，可以看一下文章末尾的推介阅读。
 
@@ -74,6 +75,7 @@ vue-router源码注释：[vue\-router\-analysis](https://github.com/SHERlocked93
 >1. [H5 History Api - MDN](https://developer.mozilla.org/zh-CN/docs/Mozilla/Add-ons/WebExtensions/API/history)
 >2. [ECMAScript 6 入门 \- 阮一峰](http://es6.ruanyifeng.com/)
 >3. [JS 静态类型检查工具 Flow \- SegmentFault 思否](https://segmentfault.com/a/1190000014367450)
+>4. [JS 外观模式 \- SegmentFault 思否](https://segmentfault.com/a/1190000012431621)
 >
 >参考：
 >

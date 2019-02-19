@@ -50,8 +50,8 @@ export default class VueRouter {
       mode = 'abstract'
     }
     this.mode = mode
-
-    switch (mode) {
+    
+    switch (mode) {         // 外观模式
       case 'history':
         this.history = new HTML5History(this, options.base)
         break
@@ -82,10 +82,18 @@ export default class VueRouter {
     return this.matcher.match(raw, current, redirectedFrom)
   }
   
+  /**
+   * 当前路由对象
+   * @returns {HashHistory|HTML5History|AbstractHistory}
+   */
   get currentRoute(): ?Route {
     return this.history && this.history.current
   }
   
+  /**
+   * install 方法会调用此 init 初始化方法
+   * @param app
+   */
   init(app: any /* Vue根实例 */) {      // 在install时调用
     process.env.NODE_ENV !== 'production' && assert(
       install.installed,                // 如果已经install了则报错
@@ -124,46 +132,97 @@ export default class VueRouter {
     })
   }
   
+  /**
+   * 注册 beforeHooks 事件
+   * @param fn
+   * @returns {Function}
+   */
   beforeEach(fn: Function): Function {
     return registerHook(this.beforeHooks, fn)
   }
   
+  /**
+   * 注册 resolveHooks 事件
+   * @param fn
+   * @returns {Function}
+   */
   beforeResolve(fn: Function): Function {
     return registerHook(this.resolveHooks, fn)
   }
   
+  /**
+   * 注册 afterHooks 事件
+   * @param fn
+   * @returns {Function}
+   */
   afterEach(fn: Function): Function {
     return registerHook(this.afterHooks, fn)
   }
   
+  /**
+   * onReady 事件
+   * @param cb
+   * @param errorCb
+   */
   onReady(cb: Function, errorCb?: Function) {
     this.history.onReady(cb, errorCb)
   }
   
+  /**
+   * onError 事件
+   * @param errorCb
+   */
   onError(errorCb: Function) {
     this.history.onError(errorCb)
   }
   
+  /**
+   * 调用 transitionTo 跳转路由
+   * @param location
+   * @param onComplete
+   * @param onAbort
+   */
   push(location: RawLocation, onComplete?: Function, onAbort?: Function) {
     this.history.push(location, onComplete, onAbort)
   }
   
+  /**
+   * 调用 transitionTo 跳转路由
+   * @param location
+   * @param onComplete
+   * @param onAbort
+   */
   replace(location: RawLocation, onComplete?: Function, onAbort?: Function) {
     this.history.replace(location, onComplete, onAbort)
   }
   
+  /**
+   * 跳转到指定历史记录
+   * @param n 跳几个
+   */
   go(n: number) {
     this.history.go(n)
   }
   
+  /**
+   * 后退
+   */
   back() {
     this.go(-1)
   }
   
+  /**
+   * 前进
+   */
   forward() {
     this.go(1)
   }
   
+  /**
+   * 获取路由匹配的组件
+   * @param to
+   * @returns {*}
+   */
   getMatchedComponents(to?: RawLocation | Route): Array<any> {
     const route: any = to
       ? to.matched
@@ -180,11 +239,14 @@ export default class VueRouter {
     }))
   }
   
-  resolve(
-    to: RawLocation,
-    current?: Route,
-    append?: boolean
-  ): {
+  /**
+   * 根据路由对象返回浏览器路径等信息
+   * @param to 要跳转的路由
+   * @param current 当前路由
+   * @param append
+   * @returns {{route: Route, location: {path, query, _normalized, hash}, href: *, normalizedTo: {path, query, _normalized, hash}, resolved: Route}}
+   */
+  resolve(to: RawLocation, current?: Route, append?: boolean): {
     location: Location,
     route: Route,
     href: string,
@@ -198,10 +260,10 @@ export default class VueRouter {
       append,
       this
     )
-    const route = this.match(location, current)
-    const fullPath = route.redirectedFrom || route.fullPath
-    const base = this.history.base
-    const href = createHref(base, fullPath, this.mode)
+    const route = this.match(location, current)     // 获取 location 匹配的路由对象
+    const fullPath = route.redirectedFrom || route.fullPath  // 匹配路由的fullpath
+    const base = this.history.base                           // base
+    const href = createHref(base, fullPath, this.mode)       // 创建页面的href链接
     return {
       location,
       route,
@@ -224,6 +286,12 @@ export default class VueRouter {
   }
 }
 
+/**
+ * 注册指定钩子函数
+ * @param list
+ * @param fn
+ * @returns {Function}
+ */
 function registerHook(list: Array<any>, fn: Function): Function {
   list.push(fn)
   return () => {
@@ -232,6 +300,13 @@ function registerHook(list: Array<any>, fn: Function): Function {
   }
 }
 
+/**
+ * 创建页面 href 链接
+ * @param base
+ * @param fullPath
+ * @param mode
+ * @returns {string}
+ */
 function createHref(base: string, fullPath: string, mode) {
   // noinspection ES6ConvertVarToLetConst
   var path = mode === 'hash' ? '#' + fullPath : fullPath

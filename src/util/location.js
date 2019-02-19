@@ -7,6 +7,14 @@ import { fillParams } from './params'
 import { warn } from './warn'
 import { extend } from './misc'
 
+/**
+ * 规范化处理 location
+ * @param raw
+ * @param current
+ * @param append
+ * @param router
+ * @returns {*}
+ */
 export function normalizeLocation (
   raw: RawLocation,
   current: ?Route,
