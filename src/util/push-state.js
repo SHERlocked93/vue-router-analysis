@@ -3,9 +3,13 @@
 import { inBrowser } from './dom'
 import { saveScrollPosition } from './scroll'
 
-export const supportsPushState = inBrowser && (function () {
+/**
+ * 浏览器是否支持 pushState 方法
+ * @type {boolean|*}
+ */
+export const supportsPushState = inBrowser && (function() {
   const ua = window.navigator.userAgent
-
+  
   if (
     (ua.indexOf('Android 2.') !== -1 || ua.indexOf('Android 4.0') !== -1) &&
     ua.indexOf('Mobile Safari') !== -1 &&
@@ -14,7 +18,7 @@ export const supportsPushState = inBrowser && (function () {
   ) {
     return false
   }
-
+  
   return window.history && 'pushState' in window.history
 })()
 
@@ -23,21 +27,40 @@ const Time = inBrowser && window.performance && window.performance.now
   ? window.performance
   : Date
 
+/* 当前页面的 key 值 */
 let _key: string = genKey()
 
-function genKey (): string {
+/**
+ * 根据时间生成的唯一 key 值
+ * @type {string}
+ * @private
+ */
+function genKey(): string {
   return Time.now().toFixed(3)
 }
 
-export function getStateKey () {
+/**
+ * 获取 key
+ * @returns {string}
+ */
+export function getStateKey() {
   return _key
 }
 
-export function setStateKey (key: string) {
+/**
+ * 设置 key
+ * @param key
+ */
+export function setStateKey(key: string) {
   _key = key
 }
 
-export function pushState (url?: string, replace?: boolean) {
+/**
+ * 向浏览器 pushState
+ * @param url
+ * @param replace
+ */
+export function pushState(url?: string, replace?: boolean) {
   saveScrollPosition()
   // try...catch the pushState call to get around Safari
   // DOM Exception 18 where it limits to 100 pushState calls
@@ -54,6 +77,10 @@ export function pushState (url?: string, replace?: boolean) {
   }
 }
 
-export function replaceState (url?: string) {
+/**
+ * 向浏览器 replaceState
+ * @param url
+ */
+export function replaceState(url?: string) {
   pushState(url, true)
 }

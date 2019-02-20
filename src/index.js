@@ -94,7 +94,7 @@ export default class VueRouter {
    * install 方法会调用此 init 初始化方法
    * @param app
    */
-  init(app: any /* Vue根实例 */) {      // 在install时调用
+  init(app: any /* Vue组件实例 */) {      // 在install时调用
     process.env.NODE_ENV !== 'production' && assert(
       install.installed,                // 如果已经install了则报错
       `not installed. Make sure to call \`Vue.use(VueRouter)\` ` +

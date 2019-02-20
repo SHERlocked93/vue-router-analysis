@@ -12,7 +12,7 @@ export function install(Vue) {
   if (install.installed && _Vue === Vue) return   // 避免重复装载
   install.installed = true      // 装载标志位
   
-  _Vue = Vue
+  _Vue = Vue    // 这样拿到 Vue 不会因为 import 带来的打包体积增加
   
   const isDef = v => v !== undefined
   

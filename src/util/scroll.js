@@ -6,7 +6,10 @@ import { getStateKey, setStateKey } from './push-state'
 
 const positionStore = Object.create(null)
 
-export function setupScroll () {
+/**
+ * 设置滚动条定位
+ */
+export function setupScroll() {
   // Fix for #1585 for Firefox
   // Fix for #2195 Add optional third attribute to workaround a bug in safari https://bugs.webkit.org/show_bug.cgi?id=182678
   window.history.replaceState({ key: getStateKey() }, '', window.location.href.replace(window.location.origin, ''))
@@ -18,7 +21,14 @@ export function setupScroll () {
   })
 }
 
-export function handleScroll (
+/**
+ * 处理滚动条定位
+ * @param router
+ * @param to
+ * @param from
+ * @param isPop
+ */
+export function handleScroll(
   router: Router,
   to: Route,
   from: Route,
@@ -27,25 +37,25 @@ export function handleScroll (
   if (!router.app) {
     return
   }
-
+  
   const behavior = router.options.scrollBehavior
   if (!behavior) {
     return
   }
-
+  
   if (process.env.NODE_ENV !== 'production') {
     assert(typeof behavior === 'function', `scrollBehavior must be a function`)
   }
-
+  
   // wait until re-render finishes before scrolling
   router.app.$nextTick(() => {
-    const position = getScrollPosition()
+    const position = getScrollPosition()            // 获取当前页面滚动条的位置
     const shouldScroll = behavior.call(router, to, from, isPop ? position : null)
-
+    
     if (!shouldScroll) {
       return
     }
-
+    
     if (typeof shouldScroll.then === 'function') {
       shouldScroll.then(shouldScroll => {
         scrollToPosition((shouldScroll: any), position)
@@ -60,7 +70,10 @@ export function handleScroll (
   })
 }
 
-export function saveScrollPosition () {
+/**
+ * 记录当前 key 对应的滚动条位置
+ */
+export function saveScrollPosition() {
   const key = getStateKey()
   if (key) {
     positionStore[key] = {
@@ -70,14 +83,24 @@ export function saveScrollPosition () {
   }
 }
 
-function getScrollPosition (): ?Object {
+/**
+ * 获取当前 key 对应的滚动位置
+ * @returns {*}
+ */
+function getScrollPosition(): ?Object {
   const key = getStateKey()
   if (key) {
     return positionStore[key]
   }
 }
 
-function getElementPosition (el: Element, offset: Object): Object {
+/**
+ * 获取元素的 position
+ * @param el
+ * @param offset
+ * @returns {{x: number, y: number}}
+ */
+function getElementPosition(el: Element, offset: Object): Object {
   const docEl: any = document.documentElement
   const docRect = docEl.getBoundingClientRect()
   const elRect = el.getBoundingClientRect()
@@ -87,29 +110,54 @@ function getElementPosition (el: Element, offset: Object): Object {
   }
 }
 
-function isValidPosition (obj: Object): boolean {
+/**
+ * 滚动条位置是否是正确的
+ * @param obj
+ * @returns {boolean}
+ */
+function isValidPosition(obj: Object): boolean {
   return isNumber(obj.x) || isNumber(obj.y)
 }
 
-function normalizePosition (obj: Object): Object {
+/**
+ * 规范化偏移量
+ * @param obj
+ * @returns {{x: *, y: *}}
+ */
+function normalizePosition(obj: Object): Object {
   return {
     x: isNumber(obj.x) ? obj.x : window.pageXOffset,
     y: isNumber(obj.y) ? obj.y : window.pageYOffset
   }
 }
 
-function normalizeOffset (obj: Object): Object {
+/**
+ * 规范化滚动偏移量
+ * @param obj
+ * @returns {{x: number, y: number}}
+ */
+function normalizeOffset(obj: Object): Object {
   return {
     x: isNumber(obj.x) ? obj.x : 0,
     y: isNumber(obj.y) ? obj.y : 0
   }
 }
 
-function isNumber (v: any): boolean {
+/**
+ * 是否是 number 类型
+ * @param v
+ * @returns {boolean}
+ */
+function isNumber(v: any): boolean {
   return typeof v === 'number'
 }
 
-function scrollToPosition (shouldScroll, position) {
+/**
+ * 滚动条滚动到指定位置
+ * @param shouldScroll
+ * @param position
+ */
+function scrollToPosition(shouldScroll, position) {
   const isObject = typeof shouldScroll === 'object'
   if (isObject && typeof shouldScroll.selector === 'string') {
     const el = document.querySelector(shouldScroll.selector)
@@ -123,7 +171,7 @@ function scrollToPosition (shouldScroll, position) {
   } else if (isObject && isValidPosition(shouldScroll)) {
     position = normalizePosition(shouldScroll)
   }
-
+  
   if (position) {
     window.scrollTo(position.x, position.y)
   }
