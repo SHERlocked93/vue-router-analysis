@@ -33,17 +33,19 @@ vue-router源码注释：[vue\-router\-analysis](https://github.com/SHERlocked93
 ├── flow					// Flow 声明
 ├── src						// 源码目录
 │   ├── components
-│   ├── history
-│   ├── util
-│   ├── create-matcher.js
-│   ├── create-route-map.js
+│   ├── history				// 路由类实现
+│   ├── util				// 相关工具库
+│   ├── create-matcher.js	// 根据传入的配置对象创建路由映射表
+│   ├── create-route-map.js	// 根据routes配置对象创建路由映射表 
 │   ├── index.js			// 主入口
 │   └── install.js			// VueRouter装载入口
 ├── test					// 测试文件
-├── types					// TypeScript 声明
-├── README.md
-└── package.json
+└── types					// TypeScript 声明
 ```
+
+## 2. 入口文件
+
+### 2.1 rollup 出口与入口
 
 按照惯例，首先从 `package.json` 看起，这里有两个命令值得我们关注一下：
 
@@ -56,13 +58,70 @@ vue-router源码注释：[vue\-router\-analysis](https://github.com/SHERlocked93
 }
 ```
 
-`dev:dist` 命令是使用 `rollup` 用后面的配置文件 `rollup.dev.config.js` 生成 `dist` 目录的；
+`dev:dist` 是用配置文件 `rollup.dev.config.js` 生成 `dist` 目录下相关生成文件的，这里是一些简单的配置，生成的文件是方便开发调试；
 
-`build` 命令是用 `node` 来运行 `build/build.js`，用来生成
+`build` 是用 `node` 来运行 `build/build.js` 生成正式的文件，包括 `es6`、`commonjs`、`IIFE` 方式的导出文件和压缩之后的导出文件；
 
-## 2. 入口文件
+这两种方式都是使用 `build/configs.js` 这个配置文件来生成的，其中有一段语义化比较不错的代码挺有意思，跟 Vue 的配置生成文件比较类似：
 
-vue-router 的入口位于 `src/install.js` 中的 install 方法，这是因为它的使用方法是通过 `Vue.use` 注册的，`Vue.use` 的主要作用就是找注册插件上的 `install` 方法并执行，可以简单看一下这个方法是如何实现的：
+```javascript
+module.exports = [{ 					// 打包出口
+    file: resolve('dist/vue-router.js'),
+    format: 'umd',
+    env: 'development'
+  },{
+    file: resolve('dist/vue-router.min.js'),
+    format: 'umd',
+    env: 'production'
+  },{
+    file: resolve('dist/vue-router.common.js'),
+    format: 'cjs'
+  },{
+    file: resolve('dist/vue-router.esm.js'),
+    format: 'es'
+  }
+].map(genConfig)
+
+function genConfig (opts) {
+  const config = {
+    input: {
+      input: resolve('src/index.js'), 	// 打包入口
+      plugins: [...]
+    },
+    output: {
+      file: opts.file,
+      format: opts.format,
+      banner,
+      name: 'VueRouter'
+    }
+  }
+  return config
+}
+```
+
+可以清晰的看到 `rollup` 打包的出口和入口，入口是 `src/index.js` 文件，而出口就是上面那部分的配置，`env` 是开发/生产环境标记，`format` 为编译输出的方式：
+
+- **es：**ES Modules，使用ES6的模板语法输出
+- **cjs：**CommonJs Module，遵循CommonJs Module规范的文件输出
+- **umd：**支持外链规范的文件输出，此文件可以直接使用script标签，其实也就是 IIFE 的方式
+
+那么正式输出是使用 `build` 方式，我们可以从 `src/index.js` 看起
+
+```javascript
+// src/index.js
+
+import { install } from './install'
+
+export default class VueRouter { ... }
+
+VueRouter.install = install
+```
+
+首先这个文件导出了一个类 `VueRouter`，这个就是我们在 Vue 项目中引入 vue-router 的时候 `Vue.use(VueRouter)` 所用到的，而 `Vue.use` 的主要作用就是找注册插件上的 `install` 方法并执行，往下看最后一行，从一个 `install.js` 文件中导出的 install 被赋给了 `VueRouter.install`，这就是 `Vue.use` 中执行所用到的 `install` 方法。
+
+### 2.2 Vue.use
+
+可以简单看一下 Vue 中 `Vue.use` 这个方法是如何实现的：
 
 ```javascript
 // vue/src/core/global-api/use.js
@@ -83,17 +142,17 @@ export function initUse (Vue: GlobalAPI) {
 
 上面可以看到 `Vue.use` 这个方法就是执行待注册插件上的 `install` 方法，并将这个插件实例保存起来。值得注意的是 `install` 方法执行时的第一个参数是通过 `unshift` 推入的 `this`，因此 `install` 执行时可以拿到 Vue 对象。
 
-```javascript
-import View from './components/view'
-import Link from './components/link'
+## 3. 路由注册
 
-export let _Vue
+### 3.1 install
+
+接之前，看一下 `install.js` 里面是如何进行路由插件的注册
+
+```javascript
+// src/install.js
 
 /* vue-router 的注册过程 Vue.use(VueRouter) */
 export function install(Vue) {
-  if (install.installed && _Vue === Vue) return   // 避免重复装载
-  install.installed = true      // 装载标志位
-  
   _Vue = Vue	// 这样拿到 Vue 不会因为 import 带来的打包体积增加
   
   const isDef = v => v !== undefined
@@ -142,10 +201,35 @@ export function install(Vue) {
 }
 ```
 
-`install` 方法主要分为几个部分
+`install` 方法主要分为几个部分：
 
 1. 通过 `Vue.mixin` 在 `beforeCreate`、 `destroyed` 的时候将一些路由方法挂载到每个 vue 实例中
-2. 给每个 vue 实例中挂载路由对象以保证在 `methods` 等地方可以通过 `this.$router`、`this.$route` 访问到相关方法与
+2. 给每个 vue 实例中挂载路由对象以保证在 `methods` 等地方可以通过 `this.$router`、`this.$route` 访问到相关信息
+3. 注册公共组件 `router-view`、`router-link`
+4. 注册路由的声明周期函数
+
+`Vue.mixin` 将定义的两个钩子在组件 `extend` 的时候合并到该组件的 `options` 中，从而注册到每个组件实例。看看 `beforeCreate`，这里一顿眼花缭乱的操作，是为了实现在每个 Vue 组件实例中都可以荣国 `_routerRoot` 根 Vue 实例，其上的 `_route`、`_router` 赋到 Vue 的原型上，这样每个 Vue 的实例中都可以通过 `this.$route`、`this.$router` 访问到挂载在根实例 `_routerRoot` 上的 `_route`、`_router`，并用了 Vue 上的响应式化方法 `defineReactive` 来将 `_route` 响应式化，另外在根组件上用 `this._router.init()` 进行了初始化操作。
+
+随便找个 Vue 组件，打印一下其上的 `_routerRoot`：
+
+![](https://i.loli.net/2019/02/21/5c6e1f71ccb33.png)
+
+可以看到这是 Vue 的根组件。
+
+### 3.2 VueRouter
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -43,7 +43,7 @@ export class History {
   }
   
   /**
-   * 监听函数
+   * 设置监听函数
    * @param cb
    */
   listen(cb: Function) {
@@ -105,6 +105,12 @@ export class History {
     })
   }
   
+  /**
+   * 确认跳转
+   * @param route 匹配的路由对象
+   * @param onComplete 匹配成功的回调
+   * @param onAbort 匹配失败的回调
+   */
   confirmTransition(route: Route, onComplete: Function, onAbort?: Function) {
     const current = this.current
     const abort = err => {
@@ -203,10 +209,15 @@ export class History {
     })
   }
   
+  /**
+   * 更新路由
+   * @param route VueRouter实例
+   */
   updateRoute(route: Route) {
-    const prev = this.current
-    this.current = route
-    this.cb && this.cb(route)
+    const prev = this.current       // 缓存之前实例
+    this.current = route            // 设置当前实例
+    this.cb && this.cb(route)       // 执行cb
+    // 执行 afterHooks 钩子函数，传入当前 route 和之前 route 信息
     this.router.afterHooks.forEach(hook => {
       hook && hook(route, prev)
     })
@@ -238,6 +249,12 @@ function normalizeBase(base: ?string): string {
   return base.replace(/\/$/, '')
 }
 
+/**
+ * 根据当前路由对象和匹配的路由：返回更新的路由、激活的路由、停用的路由
+ * @param current
+ * @param next
+ * @returns {{updated: Array<RouteRecord>, deactivated: Array<RouteRecord>, activated: Array<RouteRecord>}}
+ */
 function resolveQueue(
   current: Array<RouteRecord>,
   next: Array<RouteRecord>
@@ -246,7 +263,7 @@ function resolveQueue(
   activated: Array<RouteRecord>,
   deactivated: Array<RouteRecord>
 } {
-  let i
+  let i           // 找到当前路由改变的 index
   const max = Math.max(current.length, next.length)
   for (i = 0; i < max; i++) {
     if (current[i] !== next[i]) {
@@ -260,6 +277,14 @@ function resolveQueue(
   }
 }
 
+/**
+ * 提取指定 name 的路由钩子函数
+ * @param records
+ * @param name
+ * @param bind
+ * @param reverse
+ * @returns {*}
+ */
 function extractGuards(
   records: Array<RouteRecord>,
   name: string,
@@ -277,6 +302,12 @@ function extractGuards(
   return flatten(reverse ? guards.reverse() : guards)
 }
 
+/**
+ * 提取指定 key 的路由钩子函数
+ * @param def
+ * @param key
+ * @returns {*} 返回组件
+ */
 function extractGuard(
   def: Object | Function,
   key: string
@@ -288,14 +319,30 @@ function extractGuard(
   return def.options[key]
 }
 
+/**
+ * 停用的路由：beforeRouteLeave 钩子函数调用
+ * @param deactivated
+ * @returns {Array}
+ */
 function extractLeaveGuards(deactivated: Array<RouteRecord>): Array<?Function> {
   return extractGuards(deactivated, 'beforeRouteLeave', bindGuard, true)
 }
 
+/**
+ * 更新的路由：beforeRouteUpdate 钩子函数调用
+ * @param updated
+ * @returns {Array}
+ */
 function extractUpdateHooks(updated: Array<RouteRecord>): Array<?Function> {
   return extractGuards(updated, 'beforeRouteUpdate', bindGuard)
 }
 
+/**
+ * instance 调用 guard 函数
+ * @param guard
+ * @param instance
+ * @returns {function(): *}
+ */
 function bindGuard(guard: NavigationGuard, instance: ?_Vue): ?NavigationGuard {
   if (instance) {
     return function boundRouteGuard() {
@@ -304,6 +351,13 @@ function bindGuard(guard: NavigationGuard, instance: ?_Vue): ?NavigationGuard {
   }
 }
 
+/**
+ * 激活的路由：beforeRouteEnter 钩子函数调用
+ * @param activated
+ * @param cbs
+ * @param isValid
+ * @returns {Array}
+ */
 function extractEnterGuards(
   activated: Array<RouteRecord>,
   cbs: Array<Function>,
