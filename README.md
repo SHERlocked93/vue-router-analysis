@@ -1,4 +1,4 @@
-# vue-router-analysis
+# vue-router 源码阅读 - 文件结构与注册机制
 [TOC]
 
 前端路由是我们前端开发日常开发中经常碰到的概念，作为自己思考的输出，本人水平有限，欢迎留言讨论~
@@ -7,7 +7,9 @@
 
 vue-router源码注释：[vue\-router\-analysis](https://github.com/SHERlocked93/vue-router-analysis)
 
-声明：文章中源码的语法都使用 Flow，并且源码根据需要都有删节(为了不被迷糊 @_@)，如果要看完整版的请进入上面的 [github地址](https://github.com/SHERlocked93/vue-router-analysis) ~
+声明：文章中源码的语法都使用 Flow，并且源码根据需要都有删节(为了不被迷糊 @_@)，如果要看完整版的请进入上面的 [github地址](https://github.com/SHERlocked93/vue-router-analysis) ~ 
+
+本文是系列文章，链接见底部 ~
 
 ## 0. 前备知识
 
@@ -16,7 +18,7 @@ vue-router源码注释：[vue\-router\-analysis](https://github.com/SHERlocked93
 - 设计模式 - 外观模式
 - HTML5 History Api
 
-如果你还没有了解的话，可以看一下文章末尾的推介阅读。
+如果你对这些还没有了解的话，可以看一下本文末尾的推介阅读。
 
 ## 1. 文件结构
 
@@ -32,7 +34,7 @@ vue-router源码注释：[vue\-router\-analysis](https://github.com/SHERlocked93
 ├── examples				// 示例代码，调试的时候使用
 ├── flow					// Flow 声明
 ├── src						// 源码目录
-│   ├── components
+│   ├── components 			// 公共组件
 │   ├── history				// 路由类实现
 │   ├── util				// 相关工具库
 │   ├── create-matcher.js	// 根据传入的配置对象创建路由映射表
@@ -43,11 +45,13 @@ vue-router源码注释：[vue\-router\-analysis](https://github.com/SHERlocked93
 └── types					// TypeScript 声明
 ```
 
+我们主要关注的就是 `src` 中的内容。
+
 ## 2. 入口文件
 
 ### 2.1 rollup 出口与入口
 
-按照惯例，首先从 `package.json` 看起，这里有两个命令值得我们关注一下：
+按照惯例，首先从 `package.json` 看起，这里有两个命令值得注意一下：
 
 ```json
 {
@@ -58,13 +62,15 @@ vue-router源码注释：[vue\-router\-analysis](https://github.com/SHERlocked93
 }
 ```
 
-`dev:dist` 是用配置文件 `rollup.dev.config.js` 生成 `dist` 目录下相关生成文件的，这里是一些简单的配置，生成的文件是方便开发调试；
+`dev:dist` 用配置文件 `rollup.dev.config.js` 生成 `dist` 目录下方便开发调试相关生成文件，对应于下面的配置环境 `development`；
 
-`build` 是用 `node` 来运行 `build/build.js` 生成正式的文件，包括 `es6`、`commonjs`、`IIFE` 方式的导出文件和压缩之后的导出文件；
+`build` 是用 `node` 运行 `build/build.js` 生成正式的文件，包括 `es6`、`commonjs`、`IIFE` 方式的导出文件和压缩之后的导出文件；
 
 这两种方式都是使用 `build/configs.js` 这个配置文件来生成的，其中有一段语义化比较不错的代码挺有意思，跟 Vue 的配置生成文件比较类似：
 
 ```javascript
+// vue-router/build/configs.js
+
 module.exports = [{ 					// 打包出口
     file: resolve('dist/vue-router.js'),
     format: 'umd',
@@ -101,9 +107,9 @@ function genConfig (opts) {
 
 可以清晰的看到 `rollup` 打包的出口和入口，入口是 `src/index.js` 文件，而出口就是上面那部分的配置，`env` 是开发/生产环境标记，`format` 为编译输出的方式：
 
-- **es：**ES Modules，使用ES6的模板语法输出
-- **cjs：**CommonJs Module，遵循CommonJs Module规范的文件输出
-- **umd：**支持外链规范的文件输出，此文件可以直接使用script标签，其实也就是 IIFE 的方式
+- **es：** ES Modules，使用ES6的模板语法输出
+- **cjs： ** CommonJs Module，遵循CommonJs Module规范的文件输出
+- **umd：** 支持外链规范的文件输出，此文件可以直接使用script标签，其实也就是 IIFE 的方式
 
 那么正式输出是使用 `build` 方式，我们可以从 `src/index.js` 看起
 
@@ -134,7 +140,6 @@ export function initUse (Vue: GlobalAPI) {
     if (typeof plugin.install === 'function') {
       plugin.install.apply(plugin, args)
     }
-    installedPlugins.push(plugin)
     return this
   }
 }
@@ -142,14 +147,16 @@ export function initUse (Vue: GlobalAPI) {
 
 上面可以看到 `Vue.use` 这个方法就是执行待注册插件上的 `install` 方法，并将这个插件实例保存起来。值得注意的是 `install` 方法执行时的第一个参数是通过 `unshift` 推入的 `this`，因此 `install` 执行时可以拿到 Vue 对象。
 
+对应上一小节，这里的 `plugin.install` 就是 `VueRouter.install`。
+
 ## 3. 路由注册
 
 ### 3.1 install
 
-接之前，看一下 `install.js` 里面是如何进行路由插件的注册
+接之前，看一下 `install.js` 里面是如何进行路由插件的注册：
 
 ```javascript
-// src/install.js
+// vue-router/src/install.js
 
 /* vue-router 的注册过程 Vue.use(VueRouter) */
 export function install(Vue) {
@@ -170,7 +177,7 @@ export function install(Vue) {
     beforeCreate() {
       if (isDef(this.$options.router)) {  // 组件是否存在$options.router，该对象只在根组件上有
         this._routerRoot = this           // 这里的this是根vue实例
-        this._router = this.$options.router
+        this._router = this.$options.router	  // VueRouter实例
         this._router.init(this)
         Vue.util.defineReactive(this, '_route', this._router.history.current)
       } else {                            // 组件实例才会进入，通过$parent一级级获取_routerRoot
@@ -206,9 +213,27 @@ export function install(Vue) {
 1. 通过 `Vue.mixin` 在 `beforeCreate`、 `destroyed` 的时候将一些路由方法挂载到每个 vue 实例中
 2. 给每个 vue 实例中挂载路由对象以保证在 `methods` 等地方可以通过 `this.$router`、`this.$route` 访问到相关信息
 3. 注册公共组件 `router-view`、`router-link`
-4. 注册路由的声明周期函数
+4. 注册路由的生命周期函数
 
-`Vue.mixin` 将定义的两个钩子在组件 `extend` 的时候合并到该组件的 `options` 中，从而注册到每个组件实例。看看 `beforeCreate`，这里一顿眼花缭乱的操作，是为了实现在每个 Vue 组件实例中都可以荣国 `_routerRoot` 根 Vue 实例，其上的 `_route`、`_router` 赋到 Vue 的原型上，这样每个 Vue 的实例中都可以通过 `this.$route`、`this.$router` 访问到挂载在根实例 `_routerRoot` 上的 `_route`、`_router`，并用了 Vue 上的响应式化方法 `defineReactive` 来将 `_route` 响应式化，另外在根组件上用 `this._router.init()` 进行了初始化操作。
+`Vue.mixin` 将定义的两个钩子在组件 `extend` 的时候合并到该组件的 `options` 中，从而注册到每个组件实例。看看 `beforeCreate`，一开始访问了一个 `this.$options.router` 这个是 Vue 项目里面 `app.js` 中的 `new Vue({ router })` 这里传入的这个 router，当然也只有在 `new Vue` 这时才会传入 router，也就是说 `this.$options.router` 只有根实例上才有。这个传入 router 到底是什么呢，我们看看它的使用方式就知道了：
+
+```javascript
+const router = new VueRouter({
+  mode: 'hash',
+  routes: [{ path: '/', component: Home },
+    	{ path: '/foo', component: Foo },
+    	{ path: '/bar', component: Bar }]
+})
+
+new Vue({
+  router,
+  template: `<div id="app"></div>`
+}).$mount('#app')
+```
+
+可以看到这个 `this.$options.router` 也就是 Vue 实例中的 `this._route` 其实就是 VueRouter 的实例。
+
+剩下的一顿眼花缭乱的操作，是为了在每个 Vue 组件实例中都可以通过 `_routerRoot` 访问根 Vue 实例，其上的 `_route`、`_router` 被赋到 Vue 的原型上，这样每个 Vue 的实例中都可以通过 `this.$route`、`this.$router` 访问到挂载在根实例 `_routerRoot` 上的 `_route`、`_router`，后面用 Vue 上的响应式化方法 `defineReactive` 来将 `_route` 响应式化，另外在根组件上用 `this._router.init()` 进行了初始化操作。
 
 随便找个 Vue 组件，打印一下其上的 `_routerRoot`：
 
@@ -217,6 +242,116 @@ export function install(Vue) {
 可以看到这是 Vue 的根组件。
 
 ### 3.2 VueRouter
+
+在之前我们已经看过 `src/index.js` 了，这里来详细看一下 VueRouter 这个类
+
+```javascript
+// vue-router/src/index.js
+
+export default class VueRouter {  
+  constructor(options: RouterOptions = {}) {
+    let mode = options.mode || 'hash'       // 路由匹配方式，默认为hash
+    this.fallback = mode === 'history' && !supportsPushState && options.fallback !== false
+    if (this.fallback) { mode = 'hash' }    // 如果不支持history则退化为hash
+    if (!inBrowser) { mode = 'abstract' }   // 非浏览器环境强制abstract，比如node中
+    this.mode = mode
+    
+    switch (mode) {         // 外观模式
+      case 'history':       // history 方式
+        this.history = new HTML5History(this, options.base)
+        break
+      case 'hash':          // hash 方式
+        this.history = new HashHistory(this, options.base, this.fallback)
+        break
+      case 'abstract':      // abstract 方式
+        this.history = new AbstractHistory(this, options.base)
+        break
+      default: ...
+    }
+  }
+  
+  /* install 方法会调用 init 来初始化 */
+  init(app: any /* Vue组件实例 */) {
+    const history = this.history
+    
+    if (history instanceof HTML5History) {
+      history.transitionTo(history.getCurrentLocation())
+    } else if (history instanceof HashHistory) { 
+      const setupHashListener = () => { history.setupListeners() }
+      history.transitionTo(
+          history.getCurrentLocation(), 
+          setupHashListener, 
+          setupHashListener
+      )
+    }
+  }
+  
+  /* createMatcher 方法返回的 match 方法 */
+  match(raw: RawLocation, current?: Route, redirectedFrom?: Location) { }
+  
+  /* 当前路由对象 */
+  get currentRoute() { }
+  
+  /* 注册 beforeHooks 事件 */
+  beforeEach(fn: Function): Function { }
+  
+  /* 注册 resolveHooks 事件 */
+  beforeResolve(fn: Function): Function { }
+  
+  /* 注册 afterHooks 事件 */
+  afterEach(fn: Function): Function { }
+  
+  /* onReady 事件 */
+  onReady(cb: Function, errorCb?: Function) { }
+  
+  /* onError 事件 */
+  onError(errorCb: Function) { }
+  
+  /* 调用 transitionTo 跳转路由 */
+  push(location: RawLocation, onComplete?: Function, onAbort?: Function) { }
+  
+  /* 调用 transitionTo 跳转路由 */
+  replace(location: RawLocation, onComplete?: Function, onAbort?: Function) { }
+  
+  /* 跳转到指定历史记录 */
+  go(n: number) { }
+  
+  /* 后退 */
+  back() { }
+  
+  /* 前进 */
+  forward() { }
+  
+  /* 获取路由匹配的组件 */
+  getMatchedComponents(to?: RawLocation | Route) { }
+  
+  /* 根据路由对象返回浏览器路径等信息 */
+  resolve(to: RawLocation, current?: Route, append?: boolean) { }
+  
+  /* 动态添加路由 */
+  addRoutes(routes: Array<RouteConfig>) { }
+}
+```
+
+VueRouter 类中除了一坨实例方法之外，主要关注的是它的构造函数和初始化方法 `init`，这个方法是在 install 时的 `Vue.mixin` 所注册的 `beforeCreate` 钩子中调用的，可以翻上去看看；调用方式是 `this._router.init(this)`，因为是在 `Vue.mixin` 里调用，所以这个 this 是当前的 Vue 实例。
+
+`init` 初始化需要负责从任一个路径跳转到项目中时的路由初始化，以 Hash 模式为例，此时还没有对相关事件进行绑定，因此在第一次执行的时候就要进行事件绑定与 `popstate`、`hashchange` 事件触发，然后手动触发一次路由跳转。
+
+除此之外，VueRouter 还有很多实例方法，用来实现各种功能的，剩下的将在系列文章分享 ~
+
+
+
+# vue-router 源码阅读 - 
+
+
+
+## 4. 路由细节
+
+
+
+
+
+
 
 
 
@@ -279,6 +414,11 @@ export function replaceState(url?: string) {
 
 ---
 
+
+本文是**系列文章**，随后会更新后面的部分，共同进步~
+
+> 1. vue-router 源码阅读 - 文件结构与注册机制
+
 网上的帖子大多深浅不一，甚至有些前后矛盾，在下的文章都是学习过程中的总结，如果发现错误，欢迎留言指出~
 
 
@@ -289,7 +429,8 @@ export function replaceState(url?: string) {
 >2. [ECMAScript 6 入门 \- 阮一峰](http://es6.ruanyifeng.com/)
 >3. [JS 静态类型检查工具 Flow \- SegmentFault 思否](https://segmentfault.com/a/1190000014367450)
 >4. [JS 外观模式 \- SegmentFault 思否](https://segmentfault.com/a/1190000012431621)
+>5. [前端路由跳转基本原理 \- 掘金](https://juejin.im/post/5c52da9ee51d45221f242804)
 >
 >参考：
 >
->1. 
+>1. [Vue\.js 技术揭秘](https://ustbhuangyi.github.io/vue-analysis/vue-router/router.html)

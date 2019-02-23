@@ -8,7 +8,7 @@ import { setupScroll, handleScroll } from '../util/scroll'
 import { pushState, replaceState, supportsPushState } from '../util/push-state'
 
 export class HashHistory extends History {
-  constructor (router: Router, base: ?string, fallback: boolean) {
+  constructor(router: Router, base: ?string, fallback: boolean) {
     super(router, base)
     // check history fallback deeplinking
     if (fallback && checkFallback(this.base)) {
@@ -16,18 +16,18 @@ export class HashHistory extends History {
     }
     ensureSlash()
   }
-
+  
   // this is delayed until the app mounts
   // to avoid the hashchange listener being fired too early
-  setupListeners () {
+  setupListeners() {
     const router = this.router
     const expectScroll = router.options.scrollBehavior
     const supportsScroll = supportsPushState && expectScroll
-
-    if (supportsScroll) {
-      setupScroll()
+    
+    if (supportsScroll) {     // 设置当前路径 url 页面的滚动条的位置
+      setupScroll()           // 监听 popstate 事件，设置设置滚动条定位
     }
-
+    
     window.addEventListener(supportsPushState ? 'popstate' : 'hashchange', () => {
       const current = this.current
       if (!ensureSlash()) {
@@ -43,8 +43,8 @@ export class HashHistory extends History {
       })
     })
   }
-
-  push (location: RawLocation, onComplete?: Function, onAbort?: Function) {
+  
+  push(location: RawLocation, onComplete?: Function, onAbort?: Function) {
     const { current: fromRoute } = this
     this.transitionTo(location, route => {
       pushHash(route.fullPath)
@@ -52,8 +52,8 @@ export class HashHistory extends History {
       onComplete && onComplete(route)
     }, onAbort)
   }
-
-  replace (location: RawLocation, onComplete?: Function, onAbort?: Function) {
+  
+  replace(location: RawLocation, onComplete?: Function, onAbort?: Function) {
     const { current: fromRoute } = this
     this.transitionTo(location, route => {
       replaceHash(route.fullPath)
@@ -61,24 +61,24 @@ export class HashHistory extends History {
       onComplete && onComplete(route)
     }, onAbort)
   }
-
-  go (n: number) {
+  
+  go(n: number) {
     window.history.go(n)
   }
-
-  ensureURL (push?: boolean) {
+  
+  ensureURL(push?: boolean) {
     const current = this.current.fullPath
     if (getHash() !== current) {
       push ? pushHash(current) : replaceHash(current)
     }
   }
-
-  getCurrentLocation () {
+  
+  getCurrentLocation() {
     return getHash()
   }
 }
 
-function checkFallback (base) {
+function checkFallback(base) {
   const location = getLocation(base)
   if (!/^\/#/.test(location)) {
     window.location.replace(
@@ -88,7 +88,7 @@ function checkFallback (base) {
   }
 }
 
-function ensureSlash (): boolean {
+function ensureSlash(): boolean {
   const path = getHash()
   if (path.charAt(0) === '/') {
     return true
@@ -97,21 +97,21 @@ function ensureSlash (): boolean {
   return false
 }
 
-export function getHash (): string {
+export function getHash(): string {
   // 不用 window.location.hash 的原因是兼容性 - Firefox will pre-decode it!
   const href = window.location.href
   const index = href.indexOf('#')
   return index === -1 ? '' : decodeURI(href.slice(index + 1))
 }
 
-function getUrl (path) {
+function getUrl(path) {
   const href = window.location.href
   const i = href.indexOf('#')
   const base = i >= 0 ? href.slice(0, i) : href
-  return `${base}#${path}`
+  return `${ base }#${ path }`
 }
 
-function pushHash (path) {
+function pushHash(path) {
   if (supportsPushState) {
     pushState(getUrl(path))
   } else {
@@ -119,7 +119,7 @@ function pushHash (path) {
   }
 }
 
-function replaceHash (path) {
+function replaceHash(path) {
   if (supportsPushState) {
     replaceState(getUrl(path))
   } else {

@@ -39,7 +39,7 @@ export default class VueRouter {
     this.beforeHooks = []
     this.resolveHooks = []
     this.afterHooks = []
-    this.matcher = createMatcher(options.routes || [], this)    // 添加路由匹配
+    this.matcher = createMatcher(options.routes || [], this)    // 添加路由匹配器
     
     let mode = options.mode || 'hash'       // 路由匹配方式，默认为hash
     this.fallback = mode === 'history' && !supportsPushState && options.fallback !== false
@@ -52,13 +52,13 @@ export default class VueRouter {
     this.mode = mode
     
     switch (mode) {         // 外观模式
-      case 'history':
+      case 'history':       // history 方式
         this.history = new HTML5History(this, options.base)
         break
-      case 'hash':
+      case 'hash':          // hash 方式
         this.history = new HashHistory(this, options.base, this.fallback)
         break
-      case 'abstract':
+      case 'abstract':      // abstract 方式
         this.history = new AbstractHistory(this, options.base)
         break
       default:
@@ -103,7 +103,7 @@ export default class VueRouter {
     
     this.apps.push(app)
     
-    // main app already initialized. app如果已经初始化，则返回
+    // app如果已经初始化，则返回
     if (this.app) {
       return
     }
@@ -114,9 +114,9 @@ export default class VueRouter {
     
     if (history instanceof HTML5History) {
       history.transitionTo(history.getCurrentLocation())
-    } else if (history instanceof HashHistory) {    //
+    } else if (history instanceof HashHistory) {
       const setupHashListener = () => {
-        history.setupListeners()
+        history.setupListeners()           // 设置 popstate、hashchange 事件监听
       }
       history.transitionTo(
         history.getCurrentLocation(),

@@ -31,7 +31,7 @@ export function createRouteMap(
     addRouteRecord(pathList, pathMap, nameMap, route)
   })
   
-  // ensure wildcard routes are always at the end，确保通配符在 pathList 数组中最后一项
+  // 确保通配符在 pathList 数组中最后一项
   for (let i = 0, l = pathList.length; i < l; i++) {
     if (pathList[i] === '*') {
       pathList.push(pathList.splice(i, 1)[0])
@@ -104,7 +104,8 @@ function addRouteRecord(
         : { default: route.props }
   }
   
-  if (route.children) {         // 如果路由配置含有 children 配置项，则循环添加路由记录
+  // 如果路由配置含有 children 配置项，则循环添加路由记录
+  if (route.children) {
     // Warn if route is named, does not redirect and has a default child route.
     // If users navigate to this route by name, the default child will
     // not be rendered (GH Issue #629)
@@ -129,7 +130,8 @@ function addRouteRecord(
     })
   }
   
-  if (route.alias !== undefined) {                // 路由配置中有alias的情况
+  // 路由配置中有alias的情况
+  if (route.alias !== undefined) {
     const aliases = Array.isArray(route.alias)    // 转化为数组
       ? route.alias
       : [route.alias]
@@ -150,12 +152,14 @@ function addRouteRecord(
     })
   }
   
-  if (!pathMap[record.path]) {        // 用 path 作为key保存路由记录项，保存到pathMap
+  // 用 path 作为key保存路由记录项，保存到pathMap
+  if (!pathMap[record.path]) {
     pathList.push(record.path)
     pathMap[record.path] = record
   }
   
-  if (name) {                         // 用 name 作为key保存路由记录项，保存到nameMap
+  // 用 name 作为key保存路由记录项，保存到nameMap
+  if (name) {
     if (!nameMap[name]) {
       nameMap[name] = record
     } else if (process.env.NODE_ENV !== 'production' && !matchAs) {

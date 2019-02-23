@@ -12,6 +12,7 @@ import {
   resolveAsyncComponents
 } from '../util/resolve-components'
 
+/* 基类 */
 export class History {
   router: Router                     // VueRouter 实例
   base: string                       // base路径
