@@ -1,7 +1,9 @@
 # vue-router 源码阅读 - 文件结构与注册机制
 [TOC]
 
-前端路由是我们前端开发日常开发中经常碰到的概念，作为自己思考的输出，本人水平有限，欢迎留言讨论~
+![](https://i.loli.net/2019/02/23/5c71619fc2cf0.jpg)
+
+前端路由是我们前端开发日常开发中经常碰到的概念，在日常使用中知其然也好奇着所以然，因此对 vue-router 的源码进行了一些阅读，也汲取了社区的一些文章优秀的思想，于本文记录总结作为自己思考的输出，本人水平有限，欢迎留言讨论~
 
 目标 vue-rouer 版本：`3.0.2`
 
@@ -249,42 +251,10 @@ new Vue({
 // vue-router/src/index.js
 
 export default class VueRouter {  
-  constructor(options: RouterOptions = {}) {
-    let mode = options.mode || 'hash'       // 路由匹配方式，默认为hash
-    this.fallback = mode === 'history' && !supportsPushState && options.fallback !== false
-    if (this.fallback) { mode = 'hash' }    // 如果不支持history则退化为hash
-    if (!inBrowser) { mode = 'abstract' }   // 非浏览器环境强制abstract，比如node中
-    this.mode = mode
-    
-    switch (mode) {         // 外观模式
-      case 'history':       // history 方式
-        this.history = new HTML5History(this, options.base)
-        break
-      case 'hash':          // hash 方式
-        this.history = new HashHistory(this, options.base, this.fallback)
-        break
-      case 'abstract':      // abstract 方式
-        this.history = new AbstractHistory(this, options.base)
-        break
-      default: ...
-    }
-  }
+  constructor(options: RouterOptions = {}) { }
   
   /* install 方法会调用 init 来初始化 */
-  init(app: any /* Vue组件实例 */) {
-    const history = this.history
-    
-    if (history instanceof HTML5History) {
-      history.transitionTo(history.getCurrentLocation())
-    } else if (history instanceof HashHistory) { 
-      const setupHashListener = () => { history.setupListeners() }
-      history.transitionTo(
-          history.getCurrentLocation(), 
-          setupHashListener, 
-          setupHashListener
-      )
-    }
-  }
+  init(app: any /* Vue组件实例 */) { }
   
   /* createMatcher 方法返回的 match 方法 */
   match(raw: RawLocation, current?: Route, redirectedFrom?: Location) { }
@@ -333,9 +303,63 @@ export default class VueRouter {
 }
 ```
 
-VueRouter 类中除了一坨实例方法之外，主要关注的是它的构造函数和初始化方法 `init`，这个方法是在 install 时的 `Vue.mixin` 所注册的 `beforeCreate` 钩子中调用的，可以翻上去看看；调用方式是 `this._router.init(this)`，因为是在 `Vue.mixin` 里调用，所以这个 this 是当前的 Vue 实例。
+VueRouter 类中除了一坨实例方法之外，主要关注的是它的构造函数和初始化方法 `init`。
 
-`init` 初始化需要负责从任一个路径跳转到项目中时的路由初始化，以 Hash 模式为例，此时还没有对相关事件进行绑定，因此在第一次执行的时候就要进行事件绑定与 `popstate`、`hashchange` 事件触发，然后手动触发一次路由跳转。
+首先看看构造函数，其中的 `mode` 代表路由创建的模式，由用户配置与应用场景决定，主要有三种 History、Hash、Abstract，前两种我们已经很熟悉了，Abstract 代表非浏览器环境，比如 Node、weex 等；`this.history` 主要是路由的具体实例。实现如下：
+
+```javascript
+// vue-router/src/index.js
+
+export default class VueRouter {  
+  constructor(options: RouterOptions = {}) {
+    let mode = options.mode || 'hash'       // 路由匹配方式，默认为hash
+    this.fallback = mode === 'history' && !supportsPushState && options.fallback !== false
+    if (this.fallback) { mode = 'hash' }    // 如果不支持history则退化为hash
+    if (!inBrowser) { mode = 'abstract' }   // 非浏览器环境强制abstract，比如node中
+    this.mode = mode
+    
+    switch (mode) {         // 外观模式
+      case 'history':       // history 方式
+        this.history = new HTML5History(this, options.base)
+        break
+      case 'hash':          // hash 方式
+        this.history = new HashHistory(this, options.base, this.fallback)
+        break
+      case 'abstract':      // abstract 方式
+        this.history = new AbstractHistory(this, options.base)
+        break
+      default: ...
+    }
+  }
+}
+```
+
+`init` 初始化方法是在 install 时的 `Vue.mixin` 所注册的 `beforeCreate` 钩子中调用的，可以翻上去看看；调用方式是 `this._router.init(this)`，因为是在 `Vue.mixin` 里调用，所以这个 this 是当前的 Vue 实例。另外初始化方法需要负责从任一个路径跳转到项目中时的路由初始化，以 Hash 模式为例，此时还没有对相关事件进行绑定，因此在第一次执行的时候就要进行事件绑定与 `popstate`、`hashchange` 事件触发，然后手动触发一次路由跳转。实现如下：
+
+```javascript
+// vue-router/src/index.js
+
+export default class VueRouter {  
+  /* install 方法会调用 init 来初始化 */
+  init(app: any /* Vue组件实例 */) {
+    const history = this.history
+    
+    if (history instanceof HTML5History) {
+      // 调用 history 实例的 transitionTo 方法
+      history.transitionTo(history.getCurrentLocation())
+    } else if (history instanceof HashHistory) { 
+      const setupHashListener = () => {
+          history.setupListeners()      // 设置 popstate/hashchange 事件监听
+      }
+      history.transitionTo( 			// 调用 history 实例的 transitionTo 方法
+          history.getCurrentLocation(), // 浏览器 window 地址的 hash 值
+          setupHashListener, 			// 成功回调
+          setupHashListener				// 失败回调
+      )
+    }
+  }
+}
+```
 
 除此之外，VueRouter 还有很多实例方法，用来实现各种功能的，剩下的将在系列文章分享 ~
 
@@ -343,7 +367,9 @@ VueRouter 类中除了一坨实例方法之外，主要关注的是它的构造�
 
 # vue-router 源码阅读 - 
 
+前端路由是我们前端开发日常开发中经常碰到的概念，在日常使用中知其然也好奇着所以然，因此对 vue-router 的源码进行了一些阅读，也汲取了社区的一些文章优秀的思想，于本文记录总结作为自己思考的输出，本人水平有限，欢迎留言讨论~
 
+History 和 Hash 模式都执行了 `history.transitionTo` 方法，这个方法是定义于 `history/base.js` 里面的基类，
 
 ## 4. 路由细节
 
@@ -417,7 +443,7 @@ export function replaceState(url?: string) {
 
 本文是**系列文章**，随后会更新后面的部分，共同进步~
 
-> 1. vue-router 源码阅读 - 文件结构与注册机制
+> 1. [vue-router 源码阅读 - 文件结构与注册机制](https://segmentfault.com/a/1190000018262346)
 
 网上的帖子大多深浅不一，甚至有些前后矛盾，在下的文章都是学习过程中的总结，如果发现错误，欢迎留言指出~
 

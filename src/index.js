@@ -119,9 +119,9 @@ export default class VueRouter {
         history.setupListeners()           // 设置 popstate、hashchange 事件监听
       }
       history.transitionTo(
-        history.getCurrentLocation(),
-        setupHashListener,
-        setupHashListener
+        history.getCurrentLocation(),      // 浏览器 window 地址的 hash 值
+        setupHashListener,                 // 成功回调
+        setupHashListener                  // 失败回调
       )
     }
     
