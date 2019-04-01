@@ -3,13 +3,13 @@
 
 ![](https://i.loli.net/2019/02/23/5c71619fc2cf0.jpg)
 
-前端路由是我们前端开发日常开发中经常碰到的概念，在日常使用中知其然也好奇着所以然，因此对 vue-router 的源码进行了一些阅读，也汲取了社区的一些文章优秀的思想，于本文记录总结作为自己思考的输出，本人水平有限，欢迎留言讨论~
+前端路由是我们前端开发日常开发中经常碰到的概念，在下在日常使用中知其然也好奇着所以然，因此对 vue-router 的源码进行了一些阅读，也汲取了社区的一些文章优秀的思想，于本文记录总结作为自己思考的输出，本人水平有限，欢迎留言讨论~
 
 目标 vue-rouer 版本：`3.0.2`
 
 vue-router源码注释：[vue\-router\-analysis](https://github.com/SHERlocked93/vue-router-analysis)
 
-声明：文章中源码的语法都使用 Flow，并且源码根据需要都有删节(为了不被迷糊 @_@)，如果要看完整版的请进入上面的 [github地址](https://github.com/SHERlocked93/vue-router-analysis) ~ 
+声明：文章中源码的语法都使用 Flow，并且源码根据需要都有删节(为了不被迷糊 @_@)，如果要看完整版的请进入上面的 [github地址](https://github.com/SHERlocked93/vue-router-analysis) ~
 
 本文是系列文章，链接见底部 ~
 
@@ -40,7 +40,7 @@ vue-router源码注释：[vue\-router\-analysis](https://github.com/SHERlocked93
 │   ├── history				// 路由类实现
 │   ├── util				// 相关工具库
 │   ├── create-matcher.js	// 根据传入的配置对象创建路由映射表
-│   ├── create-route-map.js	// 根据routes配置对象创建路由映射表 
+│   ├── create-route-map.js	// 根据routes配置对象创建路由映射表
 │   ├── index.js			// 主入口
 │   └── install.js			// VueRouter装载入口
 ├── test					// 测试文件
@@ -110,7 +110,7 @@ function genConfig (opts) {
 可以清晰的看到 `rollup` 打包的出口和入口，入口是 `src/index.js` 文件，而出口就是上面那部分的配置，`env` 是开发/生产环境标记，`format` 为编译输出的方式：
 
 - **es：** ES Modules，使用ES6的模板语法输出
-- **cjs： ** CommonJs Module，遵循CommonJs Module规范的文件输出
+- **cjs：** CommonJs Module，遵循CommonJs Module规范的文件输出
 - **umd：** 支持外链规范的文件输出，此文件可以直接使用script标签，其实也就是 IIFE 的方式
 
 那么正式输出是使用 `build` 方式，我们可以从 `src/index.js` 看起
@@ -163,9 +163,9 @@ export function initUse (Vue: GlobalAPI) {
 /* vue-router 的注册过程 Vue.use(VueRouter) */
 export function install(Vue) {
   _Vue = Vue	// 这样拿到 Vue 不会因为 import 带来的打包体积增加
-  
+
   const isDef = v => v !== undefined
-  
+
   const registerInstance = (vm, callVal) => {
     let i = vm.$options._parentVnode // 至少存在一个 VueComponent 时, _parentVnode 属性才存在
     // registerRouteInstance 在 src/components/view.js
@@ -173,7 +173,7 @@ export function install(Vue) {
       i(vm, callVal)
     }
   }
-  
+
   // new Vue 时或者创建新组件时，在 beforeCreate 钩子中调用
   Vue.mixin({
     beforeCreate() {
@@ -191,20 +191,20 @@ export function install(Vue) {
       registerInstance(this)
     }
   })
-  
+
   // 所有实例中 this.$router 等同于访问 this._routerRoot._router
   Object.defineProperty(Vue.prototype, '$router', {
     get() { return this._routerRoot._router }
   })
-  
+
   // 所有实例中 this.$route 等同于访问 this._routerRoot._route
   Object.defineProperty(Vue.prototype, '$route', {
     get() { return this._routerRoot._route }
   })
-  
+
   Vue.component('RouterView', View)     // 注册公共组件 router-view
   Vue.component('RouterLink', Link)     // 注册公共组件 router-link
-  
+
   const strats = Vue.config.optionMergeStrategies
   strats.beforeRouteEnter = strats.beforeRouteLeave = strats.beforeRouteUpdate = strats.created
 }
@@ -250,54 +250,54 @@ new Vue({
 ```javascript
 // vue-router/src/index.js
 
-export default class VueRouter {  
+export default class VueRouter {
   constructor(options: RouterOptions = {}) { }
-  
+
   /* install 方法会调用 init 来初始化 */
   init(app: any /* Vue组件实例 */) { }
-  
+
   /* createMatcher 方法返回的 match 方法 */
   match(raw: RawLocation, current?: Route, redirectedFrom?: Location) { }
-  
+
   /* 当前路由对象 */
   get currentRoute() { }
-  
+
   /* 注册 beforeHooks 事件 */
   beforeEach(fn: Function): Function { }
-  
+
   /* 注册 resolveHooks 事件 */
   beforeResolve(fn: Function): Function { }
-  
+
   /* 注册 afterHooks 事件 */
   afterEach(fn: Function): Function { }
-  
+
   /* onReady 事件 */
   onReady(cb: Function, errorCb?: Function) { }
-  
+
   /* onError 事件 */
   onError(errorCb: Function) { }
-  
+
   /* 调用 transitionTo 跳转路由 */
   push(location: RawLocation, onComplete?: Function, onAbort?: Function) { }
-  
+
   /* 调用 transitionTo 跳转路由 */
   replace(location: RawLocation, onComplete?: Function, onAbort?: Function) { }
-  
+
   /* 跳转到指定历史记录 */
   go(n: number) { }
-  
+
   /* 后退 */
   back() { }
-  
+
   /* 前进 */
   forward() { }
-  
+
   /* 获取路由匹配的组件 */
   getMatchedComponents(to?: RawLocation | Route) { }
-  
+
   /* 根据路由对象返回浏览器路径等信息 */
   resolve(to: RawLocation, current?: Route, append?: boolean) { }
-  
+
   /* 动态添加路由 */
   addRoutes(routes: Array<RouteConfig>) { }
 }
@@ -310,14 +310,14 @@ VueRouter 类中除了一坨实例方法之外，主要关注的是它的构造�
 ```javascript
 // vue-router/src/index.js
 
-export default class VueRouter {  
+export default class VueRouter {
   constructor(options: RouterOptions = {}) {
     let mode = options.mode || 'hash'       // 路由匹配方式，默认为hash
     this.fallback = mode === 'history' && !supportsPushState && options.fallback !== false
     if (this.fallback) { mode = 'hash' }    // 如果不支持history则退化为hash
     if (!inBrowser) { mode = 'abstract' }   // 非浏览器环境强制abstract，比如node中
     this.mode = mode
-    
+
     switch (mode) {         // 外观模式
       case 'history':       // history 方式
         this.history = new HTML5History(this, options.base)
@@ -339,15 +339,15 @@ export default class VueRouter {
 ```javascript
 // vue-router/src/index.js
 
-export default class VueRouter {  
+export default class VueRouter {
   /* install 方法会调用 init 来初始化 */
   init(app: any /* Vue组件实例 */) {
     const history = this.history
-    
+
     if (history instanceof HTML5History) {
       // 调用 history 实例的 transitionTo 方法
       history.transitionTo(history.getCurrentLocation())
-    } else if (history instanceof HashHistory) { 
+    } else if (history instanceof HashHistory) {
       const setupHashListener = () => {
           history.setupListeners()      // 设置 popstate/hashchange 事件监听
       }
@@ -365,76 +365,6 @@ export default class VueRouter {
 
 
 
-# vue-router 源码阅读 - 
-
-前端路由是我们前端开发日常开发中经常碰到的概念，在日常使用中知其然也好奇着所以然，因此对 vue-router 的源码进行了一些阅读，也汲取了社区的一些文章优秀的思想，于本文记录总结作为自己思考的输出，本人水平有限，欢迎留言讨论~
-
-History 和 Hash 模式都执行了 `history.transitionTo` 方法，这个方法是定义于 `history/base.js` 里面的基类，
-
-## 4. 路由细节
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-我们看看主要操作方法 `pushState` 与 `replaceState` 是如何被封装的：  
-
-```javascript
-// vue-router/src/util/push-state.js
-
-/* 当前页面的 key 值 */
-let _key: string = genKey()
-
-/* 根据时间戳生成的唯一 key 值 */
-function genKey(): string {
-  return Time.now().toFixed(3)
-}
-
-export function pushState(url?: string, replace?: boolean) {
-  saveScrollPosition()
-  const history = window.history
-  try {
-    if (replace) {
-      history.replaceState({ key: _key }, '', url)
-    } else {
-      _key = genKey()
-      history.pushState({ key: _key }, '', url)
-    }
-  } catch (e) {
-    window.location[replace ? 'replace' : 'assign'](url)
-  }
-}
-
-export function replaceState(url?: string) {
-  pushState(url, true)
-}
-```
-
-首先将当前页面的滚动位置记录下来，以便在下次跳转回来的时候直接滚动到指定位置，如果配置了 vue-router 的[滚动行为](https://router.vuejs.org/zh/guide/advanced/scroll-behavior.html#%E6%BB%9A%E5%8A%A8%E8%A1%8C%E4%B8%BA)的话，然后分别调用 `window.history` 上的 `replaceState` 与 `pushState` 来完成路由记录的操作，并且这里做了个 `try...catch` 的操作，如果刚刚的方法抛错，则使用 `window.location` 上的方法 `replace` 与 `assign` 来进行操作，它的弊端在于会直接刷新页面，比较暴力。
-
-那么 `window.location` 上的方法 `replace` 和 `assign` 有什么区别呢：
-
-- `replace` 方法：通过加载指定链接文档替换当前文档，不能通过浏览器后退到原文档；
-- `assign` 方法：加载指定链接的文档，相当于链接跳转，还可以通过浏览器后退回到原文档；
-
- 
 
 
 

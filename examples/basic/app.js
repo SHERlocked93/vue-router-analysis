@@ -17,7 +17,7 @@ const router = new VueRouter({
   mode: 'history',
   base: __dirname,
   routes: [
-    { path: '/', component: Home },
+    { path: '/', component: Home, children: [{ path: 'foo', component: Foo }] },
     { path: '/foo', component: Foo },
     { path: '/bar', component: Bar },
     { path: '/é', component: Unicode }
