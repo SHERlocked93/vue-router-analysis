@@ -41,6 +41,7 @@ export default class VueRouter {
         this.afterHooks = []
         debugger
         this.matcher = createMatcher(options.routes || [], this)    // 添加路由匹配器
+        console.log(this.matcher, 'matcher 🐶')
         
         let mode = options.mode || 'hash'       // 路由匹配方式，默认为hash
         this.fallback = mode === 'history' && !supportsPushState && options.fallback !== false
@@ -52,7 +53,7 @@ export default class VueRouter {
         }
         this.mode = mode
         
-        switch (mode) {         // 外观模式
+        switch (mode) {           // 简单工厂
             case 'history':       // history 方式
                 this.history = new HTML5History(this, options.base)
                 break
@@ -88,14 +89,14 @@ export default class VueRouter {
     }
     
     /**
-     * install 方法会调用此 init 初始化方法
+     * install 方法会调用此 init 初始化方法，在 Vue.use 里面调用
      * @param app
      */
     init(app: any /* Vue组件实例 */) {
         process.env.NODE_ENV !== 'production' && assert(
-            install.installed,                // 如果已经install了则报错
-            `not installed. Make sure to call \`Vue.use(VueRouter)\` ` +
-            `before creating root instance.`
+          install.installed,                // 如果已经install了则报错
+          `not installed. Make sure to call \`Vue.use(VueRouter)\` ` +
+          `before creating root instance.`
         )
         
         this.apps.push(app)
@@ -105,7 +106,7 @@ export default class VueRouter {
             return
         }
         
-        this.app = app                        // 实例
+        this.app = app        // 实例
         
         const history = this.history
         
@@ -115,10 +116,10 @@ export default class VueRouter {
             const setupHashListener = () => {
                 history.setupListeners()           // 设置 popstate、hashchange 事件监听
             }
-            history.transitionTo(
-                history.getCurrentLocation(),      // 浏览器 window 地址的 hash 值
-                setupHashListener,                 // 成功回调
-                setupHashListener                  // 失败回调
+            history.transitionTo(                // 做路由过渡
+              history.getCurrentLocation(),      // 浏览器 window 地址的 hash 值
+              setupHashListener,                 // 成功回调
+              setupHashListener                  // 失败回调
             )
         }
         
@@ -222,10 +223,10 @@ export default class VueRouter {
      */
     getMatchedComponents(to?: RawLocation | Route): Array<any> {
         const route: any = to
-            ? to.matched
-                ? to
-                : this.resolve(to).route
-            : this.currentRoute
+          ? to.matched
+            ? to
+            : this.resolve(to).route
+          : this.currentRoute
         if (!route) {
             return []
         }
@@ -252,10 +253,10 @@ export default class VueRouter {
         resolved: Route
     } {
         const location = normalizeLocation(
-            to,
-            current || this.history.current,
-            append,
-            this
+          to,
+          current || this.history.current,
+          append,
+          this
         )
         const route = this.match(location, current)     // 获取 location 匹配的路由对象
         const fullPath = route.redirectedFrom || route.fullPath  // 匹配路由的fullpath

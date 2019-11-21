@@ -31,8 +31,8 @@ export function install(Vue) {
             if (isDef(this.$options.router)) {  // 组件是否存在$options.router，该对象只在根组件上有
                 this._routerRoot = this         // 这里的this是根vue实例
                 this._router = this.$options.router
-                this._router.init(this)
-                Vue.util.defineReactive(this, '_route', this._router.history.current)
+                this._router.init(this)         // 根vue实例的别名
+                Vue.util.defineReactive(this, '_route', this._router.history.current)  // 使用vue 提供的响应式API，将_route响应式化，作为其他组件的this.$route
             } else {                            // 组件实例才会进入，通过$parent一级级获取_routerRoot
                 this._routerRoot = (this.$parent && this.$parent._routerRoot) || this
             }

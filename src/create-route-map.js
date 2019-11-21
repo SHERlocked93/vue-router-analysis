@@ -74,7 +74,7 @@ function addRouteRecord(
         )
     }
     
-    // path-to-regexp 配置项
+    // path-to-regexp 配置项，path 的正则匹配配置
     const pathToRegexpOptions: PathToRegexpOptions = route.pathToRegexpOptions || {}
     const normalizedPath = normalizePath(     // 规范化路由配置的 path 项
         path,
@@ -198,7 +198,7 @@ function compileRouteRegex(path: string, pathToRegexpOptions: PathToRegexpOption
  */
 function normalizePath(path: string, parent?: RouteRecord, strict?: boolean): string {
     if (!strict) path = path.replace(/\/$/, '')   // 没有strict配置则把结尾/去掉
-    if (path[0] === '/') return path        // 为/则直接返回
+    if (path[0] === '/') return path        // 开头为/则直接返回
     if (parent == null) return path         // 不存在父级路由
     return cleanPath(`${ parent.path }/${ path }`)    // 双斜杠换成单斜杠
 }

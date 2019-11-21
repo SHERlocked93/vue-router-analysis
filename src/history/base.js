@@ -126,9 +126,9 @@ export class History {
             onAbort && onAbort(err)
         }
         if (
-            isSameRoute(route, current) &&
-            // in the case the route map has been dynamically appended to
-            route.matched.length === current.matched.length
+          isSameRoute(route, current) &&
+          // in the case the route map has been dynamically appended to
+          route.matched.length === current.matched.length
         ) {
             this.ensureURL()
             return abort()
@@ -141,16 +141,16 @@ export class History {
         } = resolveQueue(this.current.matched, route.matched)
         
         const queue: Array<?NavigationGuard> = [].concat(
-            // in-component leave guards
-            extractLeaveGuards(deactivated),
-            // global before hooks
-            this.router.beforeHooks,
-            // in-component update hooks
-            extractUpdateHooks(updated),
-            // in-config enter guards
-            activated.map(m => m.beforeEnter),
-            // async components
-            resolveAsyncComponents(activated)
+          // in-component leave guards
+          extractLeaveGuards(deactivated),
+          // global before hooks
+          this.router.beforeHooks,
+          // in-component update hooks
+          extractUpdateHooks(updated),
+          // in-config enter guards
+          activated.map(m => m.beforeEnter),
+          // async components
+          resolveAsyncComponents(activated)
         )
         
         this.pending = route
@@ -165,11 +165,11 @@ export class History {
                         this.ensureURL(true)
                         abort(to)
                     } else if (
-                        typeof to === 'string' ||
-                        (typeof to === 'object' && (
-                            typeof to.path === 'string' ||
-                            typeof to.name === 'string'
-                        ))
+                      typeof to === 'string' ||
+                      (typeof to === 'object' && (
+                        typeof to.path === 'string' ||
+                        typeof to.name === 'string'
+                      ))
                     ) {
                         // next('/') or next({ path: '/' }) -> redirect
                         abort()
@@ -257,8 +257,8 @@ function normalizeBase(base: ?string): string {
  * @returns {{updated: Array<RouteRecord>, deactivated: Array<RouteRecord>, activated: Array<RouteRecord>}}
  */
 function resolveQueue(
-    current: Array<RouteRecord>,
-    next: Array<RouteRecord>
+  current: Array<RouteRecord>,
+  next: Array<RouteRecord>
 ): {
     updated: Array<RouteRecord>,
     activated: Array<RouteRecord>,
@@ -287,17 +287,17 @@ function resolveQueue(
  * @returns {*}
  */
 function extractGuards(
-    records: Array<RouteRecord>,
-    name: string,
-    bind: Function,
-    reverse?: boolean
+  records: Array<RouteRecord>,
+  name: string,
+  bind: Function,
+  reverse?: boolean
 ): Array<?Function> {
     const guards = flatMapComponents(records, (def, instance, match, key) => {
         const guard = extractGuard(def, name)
         if (guard) {
             return Array.isArray(guard)
-                ? guard.map(guard => bind(guard, instance, match, key))
-                : bind(guard, instance, match, key)
+              ? guard.map(guard => bind(guard, instance, match, key))
+              : bind(guard, instance, match, key)
         }
     })
     return flatten(reverse ? guards.reverse() : guards)
@@ -310,8 +310,8 @@ function extractGuards(
  * @returns {*} 返回组件
  */
 function extractGuard(
-    def: Object | Function,
-    key: string
+  def: Object | Function,
+  key: string
 ): NavigationGuard | Array<NavigationGuard> {
     if (typeof def !== 'function') {
         // extend now so that global mixins are applied.
@@ -360,9 +360,9 @@ function bindGuard(guard: NavigationGuard, instance: ?_Vue): ?NavigationGuard {
  * @returns {Array}
  */
 function extractEnterGuards(
-    activated: Array<RouteRecord>,
-    cbs: Array<Function>,
-    isValid: () => boolean
+  activated: Array<RouteRecord>,
+  cbs: Array<Function>,
+  isValid: () => boolean
 ): Array<?Function> {
     return extractGuards(activated, 'beforeRouteEnter', (guard, _, match, key) => {
         return bindEnterGuard(guard, match, key, cbs, isValid)
@@ -370,11 +370,11 @@ function extractEnterGuards(
 }
 
 function bindEnterGuard(
-    guard: NavigationGuard,
-    match: RouteRecord,
-    key: string,
-    cbs: Array<Function>,
-    isValid: () => boolean
+  guard: NavigationGuard,
+  match: RouteRecord,
+  key: string,
+  cbs: Array<Function>,
+  isValid: () => boolean
 ): NavigationGuard {
     return function routeEnterGuard(to, from, next) {
         return guard(to, from, cb => {
@@ -394,14 +394,14 @@ function bindEnterGuard(
 }
 
 function poll(
-    cb: any, // somehow flow cannot infer this is a function
-    instances: Object,
-    key: string,
-    isValid: () => boolean
+  cb: any, // somehow flow cannot infer this is a function
+  instances: Object,
+  key: string,
+  isValid: () => boolean
 ) {
     if (
-        instances[key] &&
-        !instances[key]._isBeingDestroyed // do not reuse being destroyed instance
+      instances[key] &&
+      !instances[key]._isBeingDestroyed // do not reuse being destroyed instance
     ) {
         cb(instances[key])
     } else if (isValid()) {
